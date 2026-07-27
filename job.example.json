@@ -1,0 +1,27 @@
+{
+  "title": "The Roman Dodecahedron",
+  "font": "DejaVu Serif",
+  "scenes": [
+    {
+      "text": "For over 300 years, they stayed buried in the soil of Europe.",
+      "clip": "https://videos.pexels.com/video-files/EXAMPLE/scene0.mp4",
+      "duration": 12
+    },
+    {
+      "text": "Twelve faces. Twelve holes. Not one written record explaining why.",
+      "clip": "https://videos.pexels.com/video-files/EXAMPLE/scene1.mp4",
+      "duration": 13
+    },
+    {
+      "text": "Some say a measuring tool. Others, a ritual object of the Gauls.",
+      "clip": "https://videos.pexels.com/video-files/EXAMPLE/scene2.mp4",
+      "duration": 12
+    },
+    {
+      "text": "The truth stayed sealed inside the Roman dodecahedron.",
+      "clip": "https://videos.pexels.com/video-files/EXAMPLE/scene3.mp4",
+      "duration": 11
+    }
+  ],
+  "music": "(otomatik: music/ klas\u00f6r\u00fcnden se\u00e7ilir)"
+}
