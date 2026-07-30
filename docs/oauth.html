@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TSC — TikTok Authorize</title>
+<style>
+body{font-family:system-ui,Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.6;color:#eee;background:#0e1426}
+h1{color:#E8D28C;border-bottom:2px solid #E8D28C;padding-bottom:8px}
+input,button{font-size:16px;padding:10px;border-radius:8px;border:1px solid #444}
+input{width:100%;box-sizing:border-box;background:#1a2238;color:#eee;margin:6px 0}
+button{background:#E8D28C;color:#0e1426;font-weight:bold;border:none;cursor:pointer;margin-top:10px}
+.box{background:#1a2238;padding:16px;border-radius:12px;margin:16px 0;word-break:break-all}
+label{font-size:14px;color:#aab}
+small{color:#8a93a6}
+code{background:#000;padding:2px 6px;border-radius:4px}
+.ok{color:#7CFC9B}.err{color:#ff8a8a}
+</style></head>
+<body>
+<h1>TikTok Authorize (Sandbox)</h1>
+<p><small>Bu sayfa, tsc-poster uygulamasi icin tek seferlik yetkilendirme yapar ve bir <b>refresh token</b> uretir. Token'i GitHub secret olarak <code>TIKTOK_REFRESH_TOKEN</code> adiyla eklersin.</small></p>
+
+<div class="box">
+<label>1) Client key (sandbox)</label>
+<input id="ck" placeholder="Client key buraya yapistir">
+<button onclick="startAuth()">2) TikTok ile yetkilendir</button>
+<small>Butona basinca TikTok izin ekranina gidersin, "Authorize" de. Geri donunce buraya bir <code>code</code> gelir.</small>
+</div>
+
+<div class="box">
+<label>3) Client secret (sandbox)</label>
+<input id="cs" placeholder="Client secret buraya yapistir">
+<button onclick="exchange()">4) Token uret</button>
+<small>Geri donduginde bu butona bas. Refresh token asagida cikar.</small>
+</div>
+
+<div class="box">
+<label>Sonuc</label>
+<div id="out">Henuz yok.</div>
+</div>
+
+<script>
+const REDIRECT = "https://aximoody.github.io/tsc-render/oauth.html";
+const SCOPE = "user.info.basic,video.upload";
+
+function startAuth(){
+  const ck = document.getElementById('ck').value.trim();
+  if(!ck){ alert("Once Client key gir."); return; }
+  localStorage.setItem('tsc_ck', ck);
+  const state = Math.random().toString(36).slice(2);
+  localStorage.setItem('tsc_state', state);
+  const u = "https://www.tiktok.com/v2/auth/authorize/"
+    + "?client_key=" + encodeURIComponent(ck)
+    + "&scope=" + encodeURIComponent(SCOPE)
+    + "&response_type=code"
+    + "&redirect_uri=" + encodeURIComponent(REDIRECT)
+    + "&state=" + state;
+  window.location.href = u;
+}
+
+async function exchange(){
+  const out = document.getElementById('out');
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const ck = document.getElementById('ck').value.trim() || localStorage.getItem('tsc_ck') || "";
+  const cs = document.getElementById('cs').value.trim();
+  if(!code){ out.innerHTML = '<span class="err">URL de "code" yok. Once 2. adimla yetkilendir, geri donunce bu butona bas.</span>'; return; }
+  if(!ck || !cs){ out.innerHTML = '<span class="err">Client key ve secret gerekli.</span>'; return; }
+  out.textContent = "Token isteniyor...";
+  try{
+    const body = new URLSearchParams({
+      client_key: ck, client_secret: cs, code: code,
+      grant_type: "authorization_code", redirect_uri: REDIRECT
+    });
+    const r = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+      method:"POST",
+      headers:{"Content-Type":"application/x-www-form-urlencoded"},
+      body: body.toString()
+    });
+    const j = await r.json();
+    if(j.refresh_token){
+      out.innerHTML = '<span class="ok">BASARILI.</span><br><br><b>REFRESH TOKEN (bunu kopyala, GitHub secret <code>TIKTOK_REFRESH_TOKEN</code>):</b><br><br>'
+        + '<div style="background:#000;padding:10px;border-radius:6px">'+j.refresh_token+'</div>'
+        + '<br><small>open_id: '+(j.open_id||'?')+' | expires_in(access): '+(j.expires_in||'?')+'s</small>';
+    } else {
+      out.innerHTML = '<span class="err">Hata:</span><br><pre style="white-space:pre-wrap">'+JSON.stringify(j,null,2)+'</pre>';
+    }
+  }catch(e){ out.innerHTML = '<span class="err">Istek hatasi: '+e.message+'</span>'; }
+}
+
+// auto-detect code on load
+window.addEventListener('load', ()=>{
+  const p = new URLSearchParams(window.location.search);
+  if(p.get('code')){
+    document.getElementById('out').innerHTML = '<span class="ok">code alindi.</span> Simdi Client secret gir ve "4) Token uret"e bas.';
+    const savedCk = localStorage.getItem('tsc_ck'); if(savedCk) document.getElementById('ck').value = savedCk;
+  }
+});
+</script>
+</body></html>
