@@ -1,0 +1,36 @@
+name: voiceover-selftest
+
+# Temporary: manual smoke test that edge-tts works on the runner and tts.py
+# produces a real vo.mp3. Safe to delete once voiceover is confirmed green.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install edge-tts
+        run: pip install --quiet edge-tts
+      - name: Make a tiny job.json
+        run: |
+          cat > job.json <<'JSON'
+          {"title":"selftest","scenes":[
+            {"text":"For three hundred years, the Roman dodecahedron has resisted every explanation.","clip":"x","duration":12},
+            {"text":"Twelve faces, twelve holes, and not a single written record of its purpose.","clip":"x","duration":12}
+          ]}
+          JSON
+      - name: Run voiceover
+        env:
+          TTS_VOICE: en-US-ChristopherNeural
+        run: python3 tts.py job.json
+      - name: Show result
+        run: |
+          echo "=== updated job.json ==="; cat job.json
+          echo "=== vo.mp3 ==="; ls -la vo.mp3
+          ffprobe -v error -show_entries format=duration -of default=nk=1:nw=1 vo.mp3
