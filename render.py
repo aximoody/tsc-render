@@ -195,7 +195,13 @@ def mux(video, ass, audio, out_path):
     run([
         "ffmpeg", "-y",
         "-i", video, "-i", audio,
-        "-vf", f"subtitles='{ass_esc}'",
+        "-vf", (
+            f"subtitles='{ass_esc}',"
+            "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:"
+            "text=SUBSCRIBE:fontcolor=white:fontsize=46:"
+            "box=1:boxcolor=0xCC0000@0.9:boxborderw=20:"
+            "x=(w-text_w)/2:y=80"
+        ),
         "-map", "0:v:0", "-map", "1:a:0",
         "-c:v", "libx264", "-preset", "medium", "-crf", "19",
         "-pix_fmt", "yuv420p", "-r", str(FPS),
