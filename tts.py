@@ -34,7 +34,7 @@ def ensure_edge_tts():
     except Exception:
         subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "edge-tts"], check=True)
 
-PAD = 0.6  # seconds of silence after each scene's speech
+PAD = 0.2  # seconds of silence after each scene's speech
 DEFAULT_VOICE = "en-US-ChristopherNeural"  # warm, deep narrator (fits the brand)
 DEFAULT_RATE = "+0%"
 
