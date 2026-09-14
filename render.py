@@ -34,7 +34,8 @@ import textwrap
 import urllib.request
 from pathlib import Path
 
-W, H = 1080, 1920
+W = int(os.environ.get("VIDEO_W", "1080"))
+H = int(os.environ.get("VIDEO_H", "1920"))
 FPS = 30
 
 # ---------- helpers ----------
