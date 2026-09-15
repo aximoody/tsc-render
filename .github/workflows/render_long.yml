@@ -1,0 +1,67 @@
+name: render-long
+
+# Manual only for now. Does NOT publish anywhere — it renders a horizontal
+# anthology video and leaves it as a downloadable GitHub artifact for review.
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Anthology job JSON (scenes with query+text+duration). Leave empty to use job.long.example.json."
+        required: false
+        default: ""
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    env:
+      VIDEO_W: "1920"
+      VIDEO_H: "1080"
+      CLIP_ORIENTATION: "landscape"
+      PEXELS_API: ${{ secrets.PEXELS_API }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ffmpeg + fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu
+
+      - name: Write input job
+        env:
+          JOB_INPUT: ${{ github.event.inputs.job }}
+        run: |
+          if [ -n "$JOB_INPUT" ]; then
+            printf '%s' "$JOB_INPUT" > job.in.json
+            echo "using dispatch-provided job"
+          else
+            cp job.long.example.json job.in.json
+            echo "using job.long.example.json"
+          fi
+
+      - name: Resolve clips from Pexels
+        run: python3 fetch_clips.py job.in.json job.json
+
+      - name: Voiceover (edge-tts) + sync scene durations
+        run: python3 tts.py job.json
+
+      - name: Pick background music
+        run: |
+          python3 - <<'PY'
+          import json, glob, random
+          job = json.load(open("job.json"))
+          tracks = sorted(glob.glob("music/*.mp3"))
+          if tracks and not job.get("music"):
+              job["music"] = random.choice(tracks)
+          json.dump(job, open("job.json", "w"), indent=2)
+          print("music:", job.get("music"))
+          PY
+
+      - name: Render
+        run: python3 render.py job.json out.mp4
+
+      - name: Upload video artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: long-video
+          path: out.mp4
+          retention-days: 7
